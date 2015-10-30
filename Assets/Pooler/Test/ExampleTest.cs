@@ -17,6 +17,7 @@ namespace UnityPoolerTest
 		// Use this for initialization
 		void Start()
 		{
+			Debug.Log(poolablePrefab.GetComponent<PoolableGameObject>()._pooledObjs.Count);
 			poolablePrefab.PopulatePool(numberToPopulate);
 		}
 
@@ -30,6 +31,11 @@ namespace UnityPoolerTest
 			if (Input.GetKeyDown(KeyCode.R))
 			{
 				ReleaseObjs();
+			}
+
+			if (Input.GetKeyDown(KeyCode.L))
+			{
+				Application.LoadLevel(Application.loadedLevel);
 			}
 		}
 

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityPoolerInternal;
 
 namespace UnityPooler
 {
@@ -134,12 +135,17 @@ namespace UnityPooler
 
 			gameObject.SetActive(activeState);
 		}
-
 		#endregion
 
 		#region private
+		[System.NonSerialized]
 		private PoolableGameObject _originalObject;
+
+		[System.NonSerialized]
 		private bool _isActive;
+
+		[System.NonSerialized]
+		private bool _isBeingTracked;
 
 		[System.NonSerialized]
 		private int _numOfActiveObjs;
@@ -173,7 +179,7 @@ namespace UnityPooler
 			SendMessage
 		}
 
-		private Stack<PoolableGameObject> _pooledObjs
+		public Stack<PoolableGameObject> _pooledObjs
 		{
 			get
 			{
@@ -205,20 +211,26 @@ namespace UnityPooler
 		[System.NonSerialized]
 		private Queue<PoolableGameObject> _mLiveObjs; 
 
-		private static Transform _container
+		private Transform _container
 		{
 			get
 			{
 				if (_mContainer == null)
 				{
-					_mContainer = new GameObject(CONTAINER_NAME);
+					_mContainer = new GameObject(CONTAINER_NAME).AddComponent<PoolContainer>();
+				}
+
+				if (!_isBeingTracked)
+				{
+					_mContainer.AddPool(this, Clear);
+					_isBeingTracked = false;
 				}
 
 				return _mContainer.transform;
 			}
 		}
 
-		private static GameObject _mContainer;
+		private static PoolContainer _mContainer;
 
 		private void SendCreationMessage(PoolableGameObject newObj)
 		{
@@ -288,6 +300,14 @@ namespace UnityPooler
 					SendReuseMessage(child);
 				}
 			}
+		}
+
+		private void Clear()
+		{
+			_mPooledObjs = null;
+			_mLiveObjs = null;
+			_isBeingTracked = false;
+			_numOfActiveObjs = 0;
 		}
 
 		#endregion
