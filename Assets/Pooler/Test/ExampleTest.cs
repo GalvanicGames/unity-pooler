@@ -17,7 +17,6 @@ namespace UnityPoolerTest
 		// Use this for initialization
 		void Start()
 		{
-			Debug.Log(poolablePrefab.GetComponent<PoolableGameObject>()._pooledObjs.Count);
 			poolablePrefab.PopulatePool(numberToPopulate);
 		}
 
