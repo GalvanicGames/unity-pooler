@@ -10,6 +10,12 @@ namespace UnityPooler
 	{
 		#region public
 		/// <summary>
+		/// The constructor arguments that should be used. If null then
+		/// default constructor is used.
+		/// </summary>
+		public static object[] constructorArgs;
+
+		/// <summary>
 		/// Should the object's pool be capped? If capped then objects will
 		/// be reused if the cap is met.
 		/// </summary>
@@ -25,12 +31,6 @@ namespace UnityPooler
 		/// live objects? Could be faster if there are a lot of objects.
 		/// </summary>
 		public static bool useDictionaryCache;
-
-		/// <summary>
-		/// The constructor arguments that should be used. If null then
-		/// default constructor is used.
-		/// </summary>
-		public static object[] constructorArgs;
 
 		/// <summary>
 		/// Returns an object from the object pool.

@@ -34,6 +34,29 @@ namespace UnityPooler
 		public ReuseMessageType reuseMessaging = ReuseMessageType.SendMessage;
 
 		/// <summary>
+		/// The messaging types.
+		/// </summary>
+		public enum ReuseMessageType
+		{
+			/// <summary>
+			/// No messaging used, just return the resued object.
+			/// </summary>
+			None,
+
+			/// <summary>
+			/// Enable and disable the object to trigger the OnEnable and
+			/// OnDisable functions.
+			/// </summary>
+			EnableDisable,
+
+			/// <summary>
+			/// Send message to invokes function OnPooledObjReused on the
+			/// object and all active children.
+			/// </summary>
+			SendMessage
+		}
+
+		/// <summary>
 		/// Returns an object from the pool
 		/// </summary>
 		/// <returns>The object returned.</returns>
@@ -50,7 +73,14 @@ namespace UnityPooler
 				IncrementPool();
 			}
 
-			PoolableGameObject obj = _pooledObjs.Pop();
+			PoolableGameObject obj;
+
+			do
+			{
+				obj = _pooledObjs.Pop();
+			} 
+			while (obj == null || obj.gameObject == null);
+			
 			obj._isActive = true;
 			obj.gameObject.SetActive(true);
 			_numOfActiveObjs++;
@@ -156,30 +186,7 @@ namespace UnityPooler
 		private const string RELEASING_UNPOOLED_OBJ = "ObjectPool - {0} is being released but isn't tracked!";
 		private const string RELEASED_INACTIVE_OBJ = "ObjectPool - Releasing {0} which is already considered released!";
 
-		/// <summary>
-		/// The messaging types.
-		/// </summary>
-		public enum ReuseMessageType
-		{
-			/// <summary>
-			/// No messaging used, just return the resued object.
-			/// </summary>
-			None,
-
-			/// <summary>
-			/// Enable and disable the object to trigger the OnEnable and
-			/// OnDisable functions.
-			/// </summary>
-			EnableDisable,
-
-			/// <summary>
-			/// Send message to invokes function OnPooledObjReused on the
-			/// object and all active children.
-			/// </summary>
-			SendMessage
-		}
-
-		public Stack<PoolableGameObject> _pooledObjs
+		private Stack<PoolableGameObject> _pooledObjs
 		{
 			get
 			{
@@ -270,7 +277,7 @@ namespace UnityPooler
 
 				objToUse = _liveObjs.Dequeue();
 			}
-			while (!objToUse._isActive);
+			while (objToUse == null || objToUse.gameObject == null || !objToUse._isActive);
 
 			if (reuseMessaging == ReuseMessageType.EnableDisable)
 			{
@@ -308,6 +315,19 @@ namespace UnityPooler
 			_mLiveObjs = null;
 			_isBeingTracked = false;
 			_numOfActiveObjs = 0;
+		}
+
+		private void OnDestroy()
+		{
+			if (_originalObject != null && _isActive)
+			{
+				_originalObject._numOfActiveObjs--;
+
+				if (_originalObject._numOfActiveObjs < 0)
+				{
+					_originalObject._numOfActiveObjs = 0;
+				}
+			}
 		}
 
 		#endregion
