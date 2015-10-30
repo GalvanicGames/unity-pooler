@@ -53,7 +53,6 @@ void OnPooledObjCreated()
   Debug.Log("I was just created!");
 }
 ```
-**
 
 ### Get ###
 
@@ -155,38 +154,38 @@ If cap is enabled then Release becomes more expensive as the class object pool w
 The class object pool works with any class but those that implement the IPoolable interface will have functions invoked on creation, get, release, and reuse.
 
 ```csharp
+/// <summary>
+/// Classes that implement IPoolable will receive calls from the ObjectPool.
+/// </summary>
+public interface IPoolable
+{
 	/// <summary>
-	/// Classes that implement IPoolable will receive calls from the ObjectPool.
+	/// Invoked when the object is instantiated.
 	/// </summary>
-	public interface IPoolable
-	{
-		/// <summary>
-		/// Invoked when the object is instantiated.
-		/// </summary>
-		void OnPoolCreate();
+	void OnPoolCreate();
 
-		/// <summary>
-		/// Invoked when the object is grabbed from the object pool.
-		/// </summary>
-		void OnPoolGet();
+	/// <summary>
+	/// Invoked when the object is grabbed from the object pool.
+	/// </summary>
+	void OnPoolGet();
 
-		/// <summary>
-		/// Invoked when the object is released back to the object pool.
-		/// </summary>
-		void OnPoolRelease();
+	/// <summary>
+	/// Invoked when the object is released back to the object pool.
+	/// </summary>
+	void OnPoolRelease();
 
-		/// <summary>
-		/// Invoked when the object is reused.
-		/// </summary>
-		void OnPoolReuse();
-	}
-	```
+	/// <summary>
+	/// Invoked when the object is reused.
+	/// </summary>
+	void OnPoolReuse();
+}
+```
 	
-	### Populating ###
+### Populating ###
 	
-	Similarly to the GameObject pool, populating is done to create objects in the pool that are ready to be grabbed. The class object pooler will also create new objects on the fly as it needs to but this will generate garbage.
-	
-	```csharp
+Similarly to the GameObject pool, populating is done to create objects in the pool that are ready to be grabbed. The class object pooler will also create new objects on the fly as it needs to but this will generate garbage.
+
+```csharp
 public class MyClass : IPoolable // IPoolable isn't needed though!
 {
   public void OnPoolCreate()
