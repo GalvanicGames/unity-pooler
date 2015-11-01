@@ -62,7 +62,7 @@ namespace UnityPooler
 		/// <returns>The object returned.</returns>
 		public PoolableGameObject Get()
 		{
-			if (_mPooledObjs.Count == 0)
+			if (_pooledObjs.Count == 0)
 			{
 				if (useCap && _numOfActiveObjs >= capAmount)
 				{
@@ -152,7 +152,7 @@ namespace UnityPooler
 				}
 
 				PoolableGameObject newObj = Instantiate(gameObject).GetComponent<PoolableGameObject>();
-				newObj.transform.parent = _container;
+				newObj.transform.SetParent(_container);
 				newObj._originalObject = this;
 
 				_pooledObjs.Push(newObj);
