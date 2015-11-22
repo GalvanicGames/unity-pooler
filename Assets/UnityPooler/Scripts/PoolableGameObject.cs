@@ -152,7 +152,7 @@ namespace UnityPooler
 				}
 
 				PoolableGameObject newObj = Instantiate(gameObject).GetComponent<PoolableGameObject>();
-				newObj.transform.SetParent(_container);
+				newObj.transform.SetParent(container);
 				newObj._originalObject = this;
 
 				_pooledObjs.Push(newObj);
@@ -180,8 +180,15 @@ namespace UnityPooler
 		[System.NonSerialized]
 		private int _numOfActiveObjs;
 		
-		private const string CREATION_FUNCTION = "OnPooledObjCreated";
-		private const string REUSE_FUNCTION = "OnPooledObjReused";
+		/// <summary>
+		/// The function that will be called for creation on MonoBehaviours. Change this if it conflicts.
+		/// </summary>
+		private const string CREATION_FUNCTION = "OnCreate";
+
+		/// <summary>
+		/// The function that will be called for reuse on MonoBehaviours. Change this if it conflicts.
+		/// </summary>
+		private const string REUSE_FUNCTION = "OnReuse";
 		private const string CONTAINER_NAME = "[ObjectPool]";
 		private const string RELEASING_UNPOOLED_OBJ = "ObjectPool - {0} is being released but isn't tracked!";
 		private const string RELEASED_INACTIVE_OBJ = "ObjectPool - Releasing {0} which is already considered released!";
@@ -218,7 +225,7 @@ namespace UnityPooler
 		[System.NonSerialized]
 		private Queue<PoolableGameObject> _mLiveObjs; 
 
-		private Transform _container
+		public Transform container
 		{
 			get
 			{
