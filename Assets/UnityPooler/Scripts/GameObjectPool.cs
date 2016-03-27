@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using UnityEditor;
+using UnityEngine;
 
 namespace UnityPooler
 {
@@ -102,6 +103,40 @@ namespace UnityPooler
 			poolable.IncrementPool();
 		}
 
+		/// <summary>
+		/// Populates the prefab's pool to the desired amount specified in the inspector.
+		/// </summary>
+		/// <param name="objToPopulate">The prefab to populate.</param>
+		public static void PopulateToDesiredWithObj(GameObject objToPopulate)
+		{
+			PoolableGameObject poolable = objToPopulate.GetComponent<PoolableGameObject>();
+
+			if (poolable == null)
+			{
+				Debug.LogErrorFormat(REQUIRES_COMP, objToPopulate.name, "PopulateToDesired");
+				return;
+			}
+
+			poolable.PopulateToDesired();
+		}
+
+		/// <summary>
+		/// Releases all live objects and clears the pool.
+		/// </summary>
+		/// <param name="objToClear"></param>
+		public static void ReleaseAndClearPoolWithObj(GameObject objToClear)
+		{
+			PoolableGameObject poolable = objToClear.GetComponent<PoolableGameObject>();
+
+			if (poolable == null)
+			{
+				Debug.LogErrorFormat(REQUIRES_COMP, objToClear.name, "ReleaseAndClearPool");
+				return;
+			}
+
+			poolable.ReleaseObjectsAndClearPool();
+		}
+
 		//
 		// Extensions
 		//
@@ -152,6 +187,25 @@ namespace UnityPooler
 		public static void IncrementPool(this GameObject obj)
 		{
 			IncrementPoolWithObj(obj);
+		}
+
+		/// <summary>
+		/// Populates the prefab to the desired amount specified in the inspector (on the PoolableGameObject component).
+		/// </summary>
+		/// <param name="obj">The prefab, or GameObject, to populate.</param>
+		public static void PopulateToDesired(this GameObject obj)
+		{
+			PopulateToDesiredWithObj(obj);
+		}
+
+		/// <summary>
+		/// Releases all live objects tied to the supplied obj and clears the pool (destroys the objects).
+		/// This will generate a lot of garbage.
+		/// </summary>
+		/// <param name="obj">Prefab, or GameObject, to clear.</param>
+		public static void ReleaseAndClearPool(this GameObject obj)
+		{
+			ReleaseAndClearPoolWithObj(obj);
 		}
 	}
 }

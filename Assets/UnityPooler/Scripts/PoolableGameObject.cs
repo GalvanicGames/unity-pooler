@@ -187,6 +187,9 @@ namespace UnityPooler
 			AddToPool(numberToPopulate - _pooledObjs.Count);
 		}
 
+		/// <summary>
+		/// Populates the pool to the desired number set in the inspector.
+		/// </summary>
 		public void PopulateToDesired()
 		{
 			PopulatePool(desiredPopulationAmount);
