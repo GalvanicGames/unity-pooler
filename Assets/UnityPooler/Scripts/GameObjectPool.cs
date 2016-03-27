@@ -1,5 +1,4 @@
-﻿using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace UnityPooler
 {
@@ -9,6 +8,9 @@ namespace UnityPooler
 	/// </summary>
 	public static class GameObjectPool
 	{
+		/// <summary>
+		/// Enables verbose logging of the the object pooling for GameObjects.
+		/// </summary>
 		public static bool verboseLogging;
 
 		private const string REQUIRES_COMP = "ObjectPool - {0} requires a PoolableGameObject component for {1}()";

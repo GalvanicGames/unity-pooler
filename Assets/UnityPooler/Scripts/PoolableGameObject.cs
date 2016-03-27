@@ -131,14 +131,22 @@ namespace UnityPooler
 
 			if (_originalObject == null)
 			{
-				//Debug.LogErrorFormat(RELEASING_UNPOOLED_OBJ, gameObject.name);
+				if (GameObjectPool.verboseLogging)
+				{
+					Debug.LogWarningFormat(RELEASING_UNPOOLED_OBJ, gameObject.name);
+				}
+
 				gameObject.SetActive(false);
 				return;
 			}
 
 			if (!_isActive)
 			{
-				//Debug.LogErrorFormat(RELEASED_INACTIVE_OBJ, gameObject.name);
+				if (GameObjectPool.verboseLogging)
+				{
+					Debug.LogWarningFormat(RELEASED_INACTIVE_OBJ, gameObject.name);
+				}
+				
 				return;
 			}
 
@@ -249,6 +257,9 @@ namespace UnityPooler
 			gameObject.SetActive(activeState);
 		}
 
+		/// <summary>
+		/// Releases all live objects and clears (destroys) the pool.
+		/// </summary>
 		public void ReleaseObjectsAndClearPool()
 		{
 			Initialize();
