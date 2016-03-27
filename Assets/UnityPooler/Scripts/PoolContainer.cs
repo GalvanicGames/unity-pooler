@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityPooler;
 
@@ -7,39 +6,61 @@ namespace UnityPoolerInternal
 {
 	public class PoolContainer : MonoBehaviour
 	{
-		private List<PoolInfo> _gamePools { get; set; }
+		private bool _isApplicationQuitting;
+		private System.Action _onDestoryCallback;
+		private System.Action _onLevelWasLoadedCallback;
+		private List<PoolableGameObject> _objsToRelease = new List<PoolableGameObject>(); 
 
-		private struct PoolInfo
+		public void RegisterOnDestroy(System.Action callback)
 		{
-			public PoolableGameObject pool;
-			public System.Action destroyCallback;
+			_onDestoryCallback += callback;
+		}
 
-			public PoolInfo(PoolableGameObject p, System.Action callback)
+		public void RegisterOnLevelWasLoaded(System.Action callback)
+		{
+			_onLevelWasLoadedCallback += callback;
+		}
+
+		public void ReleaseOnNextTick(PoolableGameObject objToRelease)
+		{
+			_objsToRelease.Add(objToRelease);
+		}
+
+		public void SetAsPersisted()
+		{
+			DontDestroyOnLoad(gameObject);
+		}
+
+		private void OnLevelWasLoaded(int level)
+		{
+			if (_onLevelWasLoadedCallback != null)
 			{
-				pool = p;
-				destroyCallback = callback;
+				_onLevelWasLoadedCallback();
 			}
+		}
+
+		private void Update()
+		{
+			while (_objsToRelease.Count > 0)
+			{
+				_objsToRelease[_objsToRelease.Count - 1].Release();
+				_objsToRelease.RemoveAt(_objsToRelease.Count - 1);
+			}
+		}
+
+		private void OnApplicationQuit()
+		{
+			_isApplicationQuitting = true;
 		}
 
 		private void OnDestroy()
 		{
-			for (int i = 0; i < _gamePools.Count; i++)
+			if (_onDestoryCallback != null && !_isApplicationQuitting)
 			{
-				if (_gamePools[i].pool != null && _gamePools[i].pool.gameObject != null)
-				{
-					_gamePools[i].destroyCallback();
-				}
-			}
-		}
-
-		public void AddPool(PoolableGameObject pool, System.Action destroyCallback)
-		{
-			if (_gamePools == null)
-			{
-				_gamePools = new List<PoolInfo>();
+				_onDestoryCallback();
 			}
 
-			_gamePools.Add(new PoolInfo(pool, destroyCallback));
+			_onDestoryCallback = null;
 		}
 	}
 }

@@ -8,6 +8,8 @@ namespace UnityPooler
 	/// </summary>
 	public static class GameObjectPool
 	{
+		public static bool verboseLogging;
+
 		private const string REQUIRES_COMP = "ObjectPool - {0} requires a PoolableGameObject component for {1}()";
 
 		/// <summary>
