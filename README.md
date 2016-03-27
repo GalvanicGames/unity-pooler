@@ -17,6 +17,10 @@ To use Unity Pooler for prefabs the PoolableGameObject component must be on the 
 
 ### PoolableGameObject Inspector ###
 
+**Persist Across Scenes** - Should the pooled object not be destroyed when a new scene is loaded. This is useful if a game populates the entire pool upfront and keeps it throughout the game.
+
+**Release Objects on Scene Transition** - If an object persists across scenes then should it be released back to the pool when the scene changes?
+
 **Send Creation Message** - Should a creation message be sent to a GameObject when it is created. Calls the function 'OnPooledObjCreated' on every Monobehaviour on the created GameObject and its children. This isn't a cheap operation so populating the pool is advised.
 
 **Use Cap?** - Should the pool be capped at a certain count? If capped and the cap is hit then GameObjects will be recycled and reused to allow getting a new one.
@@ -24,6 +28,8 @@ To use Unity Pooler for prefabs the PoolableGameObject component must be on the 
 **Cap Amount** - The cap count size.
 
 **Reuse Message Type** - When a GameObject is reused due to hitting the cap. What kind, if any, message should be sent. Possible options are none, EnableDisable (reused GameObject will receive OnDisable message followed by OnEnable), or a the message OnPooledObjReused (which will be invoked on every active MonoBehaviour on the GameObject and its children).
+
+**Desired Population** - This is informational only. The pool does not use this value but allows the desired number to be associated with the object. Call PoolableGameObject.PopulateToDesired() to populate the pool to this value.
 
 ### Populating ###
 
