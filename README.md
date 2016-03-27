@@ -21,7 +21,7 @@ To use Unity Pooler for prefabs the PoolableGameObject component must be on the 
 
 **Release Objects on Scene Transition** - If an object persists across scenes then should it be released back to the pool when the scene changes?
 
-**Send Creation Message** - Should a creation message be sent to a GameObject when it is created. Calls the function 'OnPooledObjCreated' on every Monobehaviour on the created GameObject and its children. This isn't a cheap operation so populating the pool is advised.
+**Send Creation Message** - Should a creation message be sent to a GameObject when it is created. Calls the function 'OnCreate' on every Monobehaviour on the created GameObject and its children. This isn't a cheap operation so populating the pool is advised.
 
 **Use Cap?** - Should the pool be capped at a certain count? If capped and the cap is hit then GameObjects will be recycled and reused to allow getting a new one.
 
@@ -29,7 +29,7 @@ To use Unity Pooler for prefabs the PoolableGameObject component must be on the 
 
 **Reuse Message Type** - When a GameObject is reused due to hitting the cap. What kind, if any, message should be sent. Possible options are none, EnableDisable (reused GameObject will receive OnDisable message followed by OnEnable), or a the message OnPooledObjReused (which will be invoked on every active MonoBehaviour on the GameObject and its children).
 
-**Desired Population** - This is informational only. The pool does not use this value but allows the desired number to be associated with the object. Call PoolableGameObject.PopulateToDesired() to populate the pool to this value.
+**Desired Population** - This is informational only. The pool does not use this value but allows the desired number to be associated with the object. Call gameObject.PopulateToDesired() to populate the pool to this value.
 
 ### Populating ###
 
@@ -48,13 +48,16 @@ void Start()
   
   // Similar to adding but just one
   myGameObjectPrefab.IncrementPool();
+  
+  // If the Desired Population is set in the inspector then PopulateToDesired can be used.
+  myGameObjectPrefab.PopulateToDesired();
 }
 ```
 
-If the creation messages are enabled then the following function will be invoked on the created GameObject and its children.
+If the creation messages are enabled then the following function will be invoked on the created GameObject and its children. This works similarly to how the Awake and Start functions work. THIS IS NOT CHEAP! Which is why populating at the beginning is important.
 
 ```csharp
-void OnPooledObjCreated()
+void OnCreate()
 {
   Debug.Log("I was just created!");
 }
@@ -99,7 +102,7 @@ enum ReuseMessageType
 	EnableDisable,
 
 	/// <summary>
-	/// Send message to invokes function OnPooledObjReused on the
+	/// Send message to invokes function OnReuse on the
 	/// object and all active children.
 	/// </summary>
 	SendMessage
@@ -120,6 +123,22 @@ void ReleaseObjBackToPool()
   myGameObject = null;
   
   // I have released it back to the pool! It's OnDisable function will be invoked.
+}
+```
+
+### Clearing ###
+
+Generally a pool will be cleared when a scene transitions. The live and pooled objects will be destroyed when the scene is teared down. However, if objects are told to persist across scenes then this will not occur. In many cases there may not be a desire to clear a pool ever and the objects can just live on throughout the duration of the game. However, if it is desired to clear the pool then gameObject.ReleaseAndClearPool() can be called.
+
+```csharp
+public GameObject myGameObjectPrefab;
+
+void ClearPool()
+{
+  myGameObjectPrefab.ReleaseAndClearPool();
+  
+  // Now all objects that were live have been released and all the objects that were in the
+  // pool have been destroyed. The pool population is now zero.
 }
 ```
 
