@@ -9,7 +9,7 @@ namespace UnityPoolerInternal
 		private bool _isApplicationQuitting;
 		private System.Action _onDestoryCallback;
 		private System.Action _onLevelWasLoadedCallback;
-		private List<PoolableGameObject> _objsToRelease = new List<PoolableGameObject>(); 
+		private List<PoolableGameObject> _objsToRelease = new List<PoolableGameObject>();
 
 		public void RegisterOnDestroy(System.Action callback)
 		{

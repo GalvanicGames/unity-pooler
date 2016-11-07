@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
+using UnityPooler;
 
 namespace UnityPoolerTest
 {
-	public class MessageScript : MonoBehaviour
+	public class MessageScript : MonoBehaviour, IGameObjectPoolable
 	{
 		private void OnEnable()
 		{
@@ -14,12 +15,12 @@ namespace UnityPoolerTest
 			Debug.Log(gameObject.name + " OnDisable");
 		}
 
-		private void OnPooledObjCreated()
+		public void OnObjecteCreated()
 		{
 			Debug.Log(gameObject.name + " OnPooledObjCreated");
 		}
 
-		private void OnPooledObjReused()
+		public void OnObjectReused()
 		{
 			Debug.Log(gameObject.name + " OnPooledObjReused");
 		}

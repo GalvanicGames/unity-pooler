@@ -50,7 +50,6 @@ namespace UnityPoolerEditor
 				EditorGUILayout.PropertyField(_reuseMessagingProp, new GUIContent("Reuse Message Type"));
 			}
 
-			EditorGUILayout.Separator();
 			EditorGUILayout.PropertyField(_desiredPopulationAmountProp, new GUIContent("Desired Population (DOES NOT AUTO POPULATE)"));
 			serializedObject.ApplyModifiedProperties();
 		}

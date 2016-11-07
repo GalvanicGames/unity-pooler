@@ -12,12 +12,6 @@ namespace UnityPooler
 	{
 		#region public
 		/// <summary>
-		/// Should a creation message be sent. This isn't a cheap operation 
-		/// and populating the pool on first frame is desirable.
-		/// </summary>
-		public bool sendCreationMessage = true;
-
-		/// <summary>
 		/// Should the pooled objects persist across scenes? Otherwise the pool
 		/// is torn down when the next scene is loaded.
 		/// </summary>
@@ -40,40 +34,9 @@ namespace UnityPooler
 		public int capAmount;
 
 		/// <summary>
-		/// If capped and an object is reused then what messaging should be
-		/// used.
+		/// Attach to be invoked when a new GameObject is created.
 		/// </summary>
-		public ReuseMessageType reuseMessaging = ReuseMessageType.SendMessage;
-
-		/// <summary>
-		/// This is purely informational and would be leveraged by an outside script. Keeps 
-		/// the desired pool tied to the object. Call PopulateToDesired() to populate the
-		/// pool to the desired number.
-		/// </summary>
-		public int desiredPopulationAmount;
-
-		/// <summary>
-		/// The messaging types.
-		/// </summary>
-		public enum ReuseMessageType
-		{
-			/// <summary>
-			/// No messaging used, just return the reused object.
-			/// </summary>
-			None,
-
-			/// <summary>
-			/// Enable and disable the object to trigger the OnEnable and
-			/// OnDisable functions.
-			/// </summary>
-			EnableDisable,
-
-			/// <summary>
-			/// Send message to invokes function OnPooledObjReused on the
-			/// object and all active children.
-			/// </summary>
-			SendMessage
-		}
+		public static System.Action<GameObject> onObjectCreation;
 
 		/// <summary>
 		/// Returns an object from the pool
@@ -131,22 +94,14 @@ namespace UnityPooler
 
 			if (_originalObject == null)
 			{
-				if (GameObjectPool.verboseLogging)
-				{
-					Debug.LogWarningFormat(RELEASING_UNPOOLED_OBJ, gameObject.name);
-				}
-
+				//Debug.LogErrorFormat(RELEASING_UNPOOLED_OBJ, gameObject.name);
 				gameObject.SetActive(false);
 				return;
 			}
 
 			if (!_isActive)
 			{
-				if (GameObjectPool.verboseLogging)
-				{
-					Debug.LogWarningFormat(RELEASED_INACTIVE_OBJ, gameObject.name);
-				}
-				
+				//Debug.LogErrorFormat(RELEASED_INACTIVE_OBJ, gameObject.name);
 				return;
 			}
 
@@ -166,7 +121,7 @@ namespace UnityPooler
 				return;
 			}
 
-			transform.parent = container;
+			transform.SetParent(container, false);
 			gameObject.SetActive(false);
 			_originalObject._pooledObjs.Push(this);
 			_numOfActiveObjs--;
@@ -196,11 +151,12 @@ namespace UnityPooler
 		}
 
 		/// <summary>
-		/// Populates the pool to the desired number set in the inspector.
+		/// Count of GameObjects currently in the pool.
 		/// </summary>
-		public void PopulateToDesired()
+		/// <returns>The number of GameObjects in the pool.</returns>
+		public int AmountInPool()
 		{
-			PopulatePool(desiredPopulationAmount);
+			return _pooledObjs.Count;
 		}
 
 		/// <summary>
@@ -238,7 +194,7 @@ namespace UnityPooler
 
 				_pooledObjs.Push(newObj);
 
-				if (sendCreationMessage && !newObj._createMsgSent)
+				if (!newObj._createMsgSent)
 				{
 					SendCreationMessage(newObj);
 				}
@@ -257,9 +213,6 @@ namespace UnityPooler
 			gameObject.SetActive(activeState);
 		}
 
-		/// <summary>
-		/// Releases all live objects and clears (destroys) the pool.
-		/// </summary>
 		public void ReleaseObjectsAndClearPool()
 		{
 			Initialize();
@@ -288,15 +241,12 @@ namespace UnityPooler
 		[System.NonSerialized]
 		private bool _initialized;
 
-		/// <summary>
-		/// The function that will be called for creation on MonoBehaviours. Change this if it conflicts.
-		/// </summary>
-		private const string CREATION_FUNCTION = "OnCreate";
+		[System.NonSerialized]
+		private IGameObjectPoolable[] _poolables;
 
 		/// <summary>
 		/// The function that will be called for reuse on MonoBehaviours. Change this if it conflicts.
 		/// </summary>
-		private const string REUSE_FUNCTION = "OnReuse";
 		private const string TEMP_CONTAINER_NAME = "[ObjectPool]";
 		private const string PERSISTED_CONTAINER_NAME = "[Persisted ObjectPool]";
 		private const string RELEASING_UNPOOLED_OBJ = "ObjectPool - {0} is being released but isn't tracked!";
@@ -371,7 +321,7 @@ namespace UnityPooler
 
 		private void Awake()
 		{
-			if (!_createMsgSent && sendCreationMessage)
+			if (!_createMsgSent)
 			{
 				//Not from object pool...send creation event
 				SendCreationMessage(this);
@@ -420,24 +370,16 @@ namespace UnityPooler
 		{
 			newObj._createMsgSent = true;
 
-			// The object is inactive so we have to do this manually.
-			MonoBehaviour[] behaviours = newObj.GetComponentsInChildren<MonoBehaviour>(true);
-
-			for (int i = 0; i < behaviours.Length; i++)
+			if (onObjectCreation != null)
 			{
-				MethodInfo method = behaviours[i].GetType().GetMethod(
-					CREATION_FUNCTION,
-					BindingFlags.NonPublic |
-					BindingFlags.Instance |
-					BindingFlags.Public,
-					null,
-					System.Type.EmptyTypes,
-					null);
+				onObjectCreation(newObj.gameObject);
+			}
 
-				if (method != null)
-				{
-					method.Invoke(behaviours[i], null);
-				}
+			_poolables = GetComponentsInChildren<IGameObjectPoolable>(true);
+
+			for (int i = 0; i < _poolables.Length; i++)
+			{
+				_poolables[i].OnObjecteCreated();
 			}
 		}
 
@@ -461,34 +403,14 @@ namespace UnityPooler
 			}
 			while (objToUse == null || objToUse.gameObject == null || !objToUse._isActive);
 
-			if (reuseMessaging == ReuseMessageType.EnableDisable)
+			for (int i = 0; i < _poolables.Length; i++)
 			{
-				objToUse.gameObject.SetActive(false);
-				objToUse.gameObject.SetActive(true);
-			}
-			else if (reuseMessaging == ReuseMessageType.SendMessage)
-			{
-				SendReuseMessage(objToUse.gameObject);
+				_poolables[i].OnObjectReused();
 			}
 
 			_liveObjs.AddLast(objNode);
 
 			return objToUse;
-		}
-
-		private void SendReuseMessage(GameObject obj)
-		{
-			obj.gameObject.SendMessage(REUSE_FUNCTION);
-
-			for (int i = 0; i < obj.transform.childCount; i++)
-			{
-				GameObject child = obj.transform.GetChild(i).gameObject;
-
-				if (child.activeSelf)
-				{
-					SendReuseMessage(child);
-				}
-			}
 		}
 
 		private void ReleaseObjects()

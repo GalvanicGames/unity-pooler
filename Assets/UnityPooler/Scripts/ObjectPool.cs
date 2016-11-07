@@ -1,7 +1,36 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace UnityPooler
 {
+	/// <summary>
+	/// This class has contains global settings for all object poolers.
+	/// </summary>
+	public static class ObjectPoolGeneral
+	{
+		/// <summary>
+		/// Will track if an object is not released. This is a slow
+		/// operation and should only be used in dev builds. Does not
+		/// work if useCap is enabled.
+		/// </summary>
+		public static bool detectLeaks;
+
+		public static Action onCheckForLeaks;
+
+		/// <summary>
+		/// Call this to force all the object pools to see if there are any leaks.
+		/// </summary>
+		public static void CheckForLeaks()
+		{
+			if (onCheckForLeaks != null)
+			{
+				onCheckForLeaks();
+			}
+		}
+	}
+
 	/// <summary>
 	/// This class manages regular C# object pooling. NOT FOR GAMEOBJECTS!
 	/// </summary>
@@ -22,7 +51,7 @@ namespace UnityPooler
 		public static bool useCap;
 
 		/// <summary>
-		/// If capped, the amount that pool is capped to.
+		/// If capped, the healAmount that pool is capped to.
 		/// </summary>
 		public static int capAmount;
 
@@ -38,6 +67,8 @@ namespace UnityPooler
 		/// <returns>Object from the object pool.</returns>
 		public static T Get()
 		{
+			CheckForLeaks();
+
 			if (_pooledObjs.Count == 0)
 			{
 				if (useCap && _numOfActiveObjs >= capAmount)
@@ -90,6 +121,13 @@ namespace UnityPooler
 		/// <param name="objToRelease">Object to release</param>
 		public static void Release(T objToRelease)
 		{
+			if (objToRelease == null)
+			{
+				return;
+			}
+
+			CheckForLeaks();
+
 			if (useCap)
 			{
 				// If we're capping normal objs then removing is a little bit more 
@@ -127,12 +165,61 @@ namespace UnityPooler
 		}
 
 		/// <summary>
+		/// Releases all objects in the list, the list should be cleared afterwards.
+		/// </summary>
+		/// <param name="list"></param>
+		public static void ReleaseRange(List<T> list)
+		{
+			if (list != null)
+			{
+				for (int i = 0; i < list.Count; i++)
+				{
+					Release(list[i]);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Releases all the objects in the array. The array should be nulled afterwards.
+		/// </summary>
+		/// <param name="arr"></param>
+		public static void ReleaseRange(T[] arr)
+		{
+			if (arr != null)
+			{
+				for (int i = 0; i < arr.Length; i++)
+				{
+					Release(arr[i]);
+				}
+			}
+		}
+
+		/// <summary>
 		/// Populates the object pool up to the number specified.
 		/// </summary>
-		/// <param name="numberToPopulate">The amount to populate to.</param>
+		/// <param name="numberToPopulate">The healAmount to populate to.</param>
 		public static void PopulatePool(int numberToPopulate)
 		{
 			CreateObjects(numberToPopulate - _pooledObjs.Count);
+		}
+
+		/// <summary>
+		/// Populates the object pool to the number specified within an enumerator. Intended to work well with
+		/// https://github.com/GalvanicGames/unity-game-loader
+		/// </summary>
+		/// <param name="numToPopulate">The number to populate to.</param>
+		/// <returns></returns>
+		public static IEnumerator PopulatePoolCo(int numToPopulate)
+		{
+			int amountToAdd = numToPopulate - AmountInPool();
+
+			for (int i = 0; i < amountToAdd; i++)
+			{
+				IncrementPool();
+				yield return null;
+			}
+
+			yield return null;
 		}
 
 		/// <summary>
@@ -158,80 +245,64 @@ namespace UnityPooler
 		/// </summary>
 		public static void Clear()
 		{
-			_mLiveCache = null;
-			_mLiveObjs = null;
-			_mNodePool = null;
-			_mPooledObjs = null;
+			_liveCache.Clear();
+			_liveCache.Clear();
+			_nodePool.Clear();
+			_pooledObjs.Clear();
+			_refs.Clear();
 		}
-	
+
+		/// <summary>
+		/// Check to see if any objects were GC'd instead of released.
+		/// This is done automatically with every get/release/create
+		/// but can be triggered this way if not frequent enough.
+		/// </summary>
+		public static void CheckForLeaks()
+		{
+			for (int i = 0; i < _refs.Count; i++)
+			{
+				if (!_refs[i].IsAlive)
+				{
+					Debug.LogErrorFormat(
+						"Object {0} was GC'd and not released back to ObjectPool!",
+						typeof(T));
+
+					_refs.RemoveAt(i);
+					i--;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Returns the current count in the pool.
+		/// </summary>
+		/// <returns></returns>
+		public static int AmountInPool()
+		{
+			return _pooledObjs.Count;
+		}
+
 		#endregion
 
 		#region private
 
 		private static int _numOfActiveObjs;
 
-		private static Stack<T> _pooledObjs
+		private static Stack<T> _pooledObjs = new Stack<T>();
+		private static LinkedList<T> _liveObjs = new LinkedList<T>();
+		private static Stack<LinkedListNode<T>> _nodePool = new Stack<LinkedListNode<T>>();
+		private static Dictionary<T, LinkedListNode<T>> _liveCache = new Dictionary<T, LinkedListNode<T>>();
+		private static List<WeakReference> _refs = new List<WeakReference>();
+
+		static ObjectPool()
 		{
-			get
-			{
-				if (_mPooledObjs == null)
-				{
-					_mPooledObjs = new Stack<T>();
-				}
-
-				return _mPooledObjs;
-			}
+			ObjectPoolGeneral.onCheckForLeaks += CheckForLeaks;
 		}
-
-		private static Stack<T> _mPooledObjs;
-
-		private static LinkedList<T> _liveObjs
-		{
-			get
-			{
-				if (_mLiveObjs == null)
-				{
-					_mLiveObjs = new LinkedList<T>();
-				}
-
-				return _mLiveObjs;
-			}
-		}
-
-		private static LinkedList<T> _mLiveObjs;
-
-		private static Stack<LinkedListNode<T>> _nodePool
-		{
-			get
-			{
-				if (_mNodePool == null)
-				{
-					_mNodePool = new Stack<LinkedListNode<T>>();
-				}
-
-				return _mNodePool;
-			}
-		}
-
-		private static Stack<LinkedListNode<T>> _mNodePool;
-
-		private static Dictionary<T, LinkedListNode<T>> _liveCache
-		{
-			get
-			{
-				if (_mLiveCache == null)
-				{
-					_mLiveCache = new Dictionary<T, LinkedListNode<T>>();
-				}
-
-				return _mLiveCache;
-			}
-		}
-
-		private static Dictionary<T, LinkedListNode<T>> _mLiveCache;
 
 		private static void CreateObjects(int numberToCreate)
 		{
+			CheckForLeaks();
+
 			for (int i = 0; i < numberToCreate; i++)
 			{
 				if (useCap && (_pooledObjs.Count + _numOfActiveObjs >= capAmount))
@@ -244,11 +315,11 @@ namespace UnityPooler
 
 				if (constructorArgs == null)
 				{
-					newObj = System.Activator.CreateInstance<T>();
+					newObj = Activator.CreateInstance<T>();
 				}
 				else
 				{
-					newObj = (T)System.Activator.CreateInstance(typeof(T), constructorArgs);
+					newObj = (T)Activator.CreateInstance(typeof(T), constructorArgs);
 				}
 
 				_pooledObjs.Push(newObj);
@@ -264,6 +335,11 @@ namespace UnityPooler
 				{
 					// Add to linkedlist pool to avoid garbage later
 					_nodePool.Push(new LinkedListNode<T>(null));
+				}
+
+				if (!useCap && ObjectPoolGeneral.detectLeaks)
+				{
+					_refs.Add(new WeakReference(newObj));
 				}
 			}
 		}
@@ -291,7 +367,6 @@ namespace UnityPooler
 
 			return obj;
 		}
-
 		#endregion
 	}
 }

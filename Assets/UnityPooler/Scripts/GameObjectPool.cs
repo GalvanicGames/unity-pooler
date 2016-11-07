@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 namespace UnityPooler
 {
@@ -8,9 +9,6 @@ namespace UnityPooler
 	/// </summary>
 	public static class GameObjectPool
 	{
-		/// <summary>
-		/// Enables verbose logging of the the object pooling for GameObjects.
-		/// </summary>
 		public static bool verboseLogging;
 
 		private const string REQUIRES_COMP = "ObjectPool - {0} requires a PoolableGameObject component for {1}()";
@@ -105,40 +103,6 @@ namespace UnityPooler
 			poolable.IncrementPool();
 		}
 
-		/// <summary>
-		/// Populates the prefab's pool to the desired amount specified in the inspector.
-		/// </summary>
-		/// <param name="objToPopulate">The prefab to populate.</param>
-		public static void PopulateToDesiredWithObj(GameObject objToPopulate)
-		{
-			PoolableGameObject poolable = objToPopulate.GetComponent<PoolableGameObject>();
-
-			if (poolable == null)
-			{
-				Debug.LogErrorFormat(REQUIRES_COMP, objToPopulate.name, "PopulateToDesired");
-				return;
-			}
-
-			poolable.PopulateToDesired();
-		}
-
-		/// <summary>
-		/// Releases all live objects and clears the pool.
-		/// </summary>
-		/// <param name="objToClear"></param>
-		public static void ReleaseAndClearPoolWithObj(GameObject objToClear)
-		{
-			PoolableGameObject poolable = objToClear.GetComponent<PoolableGameObject>();
-
-			if (poolable == null)
-			{
-				Debug.LogErrorFormat(REQUIRES_COMP, objToClear.name, "ReleaseAndClearPool");
-				return;
-			}
-
-			poolable.ReleaseObjectsAndClearPool();
-		}
-
 		//
 		// Extensions
 		//
@@ -163,13 +127,42 @@ namespace UnityPooler
 		}
 
 		/// <summary>
-		/// Populates the GameObject's object pool up to the amount specified.
+		/// Populates the GameObject's object pool up to the healAmount specified.
 		/// </summary>
 		/// <param name="obj"></param>
 		/// <param name="amount">Number to populate with.</param>
 		public static void PopulatePool(this GameObject obj, int amount)
 		{
 			PopulatePoolWithObj(obj, amount);
+		}
+
+		/// <summary>
+		/// Populates the GameObject's object pool to the specified amount within an enumerator. Intended to work with
+		/// https://github.com/GalvanicGames/unity-game-loader
+		/// </summary>
+		/// <param name="obj"></param>
+		/// <param name="amount"></param>
+		/// <returns></returns>
+		public static IEnumerator PopulatePoolCo(this GameObject obj, int amount)
+		{
+			PoolableGameObject poolable = obj.GetComponent<PoolableGameObject>();
+
+			if (poolable == null)
+			{
+				Debug.LogErrorFormat(REQUIRES_COMP, obj.name, "PopulatePool");
+			}
+			else
+			{
+				int amountToAdd = amount - poolable.AmountInPool();
+
+				for (int i = 0; i < amountToAdd; i++)
+				{
+					poolable.IncrementPool();
+					yield return null;
+				}
+			}
+
+			yield return null;
 		}
 
 		/// <summary>
@@ -189,25 +182,6 @@ namespace UnityPooler
 		public static void IncrementPool(this GameObject obj)
 		{
 			IncrementPoolWithObj(obj);
-		}
-
-		/// <summary>
-		/// Populates the prefab to the desired amount specified in the inspector (on the PoolableGameObject component).
-		/// </summary>
-		/// <param name="obj">The prefab, or GameObject, to populate.</param>
-		public static void PopulateToDesired(this GameObject obj)
-		{
-			PopulateToDesiredWithObj(obj);
-		}
-
-		/// <summary>
-		/// Releases all live objects tied to the supplied obj and clears the pool (destroys the objects).
-		/// This will generate a lot of garbage.
-		/// </summary>
-		/// <param name="obj">Prefab, or GameObject, to clear.</param>
-		public static void ReleaseAndClearPool(this GameObject obj)
-		{
-			ReleaseAndClearPoolWithObj(obj);
 		}
 	}
 }
