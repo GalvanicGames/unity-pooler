@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Reflection;
-using UnityPoolerInternal;
+using UnityEngine.SceneManagement;
 
 namespace UnityPooler
 {
@@ -94,14 +93,12 @@ namespace UnityPooler
 
 			if (_originalObject == null)
 			{
-				//Debug.LogErrorFormat(RELEASING_UNPOOLED_OBJ, gameObject.name);
 				gameObject.SetActive(false);
 				return;
 			}
 
 			if (!_isActive)
 			{
-				//Debug.LogErrorFormat(RELEASED_INACTIVE_OBJ, gameObject.name);
 				return;
 			}
 
@@ -114,7 +111,7 @@ namespace UnityPooler
 
 			_isActive = false;
 
-			if (_tempContainer == null ||
+			if (!persistAcrossScenes && _tempContainer == null ||
 				persistAcrossScenes && _persistedContainer == null)
 			{
 				// Nothing to release to, might be quitting
@@ -125,11 +122,6 @@ namespace UnityPooler
 			gameObject.SetActive(false);
 			_originalObject._pooledObjs.Push(this);
 			_numOfActiveObjs--;
-		}
-
-		public void ReleaseOnNextTick()
-		{
-			_tempContainer.ReleaseOnNextTick(this);
 		}
 
 		/// <summary>
@@ -189,6 +181,12 @@ namespace UnityPooler
 				}
 
 				PoolableGameObject newObj = Instantiate(gameObject).GetComponent<PoolableGameObject>();
+
+				if (persistAcrossScenes)
+				{
+					DontDestroyOnLoad(newObj.gameObject);
+				}
+
 				newObj.transform.SetParent(container);
 				newObj._originalObject = this;
 
@@ -202,11 +200,6 @@ namespace UnityPooler
 				if (useCap || persistAcrossScenes)
 				{
 					_pooledNodes.Push(new LinkedListNode<PoolableGameObject>(null));
-				}
-
-				if (persistAcrossScenes)
-				{
-					DontDestroyOnLoad(newObj);
 				}
 			}
 
@@ -249,8 +242,6 @@ namespace UnityPooler
 		/// </summary>
 		private const string TEMP_CONTAINER_NAME = "[ObjectPool]";
 		private const string PERSISTED_CONTAINER_NAME = "[Persisted ObjectPool]";
-		private const string RELEASING_UNPOOLED_OBJ = "ObjectPool - {0} is being released but isn't tracked!";
-		private const string RELEASED_INACTIVE_OBJ = "ObjectPool - Releasing {0} which is already considered released!";
 
 		private Stack<PoolableGameObject> _pooledObjs
 		{
@@ -316,8 +307,8 @@ namespace UnityPooler
 			}
 		}
 
-		private static PoolContainer _tempContainer;
-		private static PoolContainer _persistedContainer;
+		private static Transform _tempContainer;
+		private static Transform _persistedContainer;
 
 		private void Awake()
 		{
@@ -339,31 +330,34 @@ namespace UnityPooler
 
 			if (_tempContainer == null)
 			{
-				_tempContainer = new GameObject(TEMP_CONTAINER_NAME).AddComponent<PoolContainer>();
+				_tempContainer = new GameObject(TEMP_CONTAINER_NAME).transform;
 			}
-
-			_tempContainer.RegisterOnDestroy(SceneTransitioning);
 
 			if (_persistedContainer == null)
 			{
-				_persistedContainer = new GameObject(PERSISTED_CONTAINER_NAME).AddComponent<PoolContainer>();
-				_persistedContainer.SetAsPersisted();
+				_persistedContainer = new GameObject(PERSISTED_CONTAINER_NAME).transform;
+				DontDestroyOnLoad(_persistedContainer.gameObject);
 			}
 
-			if (persistAcrossScenes)
-			{
-				_persistedContainer.RegisterOnLevelWasLoaded(Reregister);
-			}
+			SceneManager.activeSceneChanged += SceneTransitioning;
 		}
 
-		private void Reregister()
+		private void SceneTransitioning(Scene from, Scene to)
 		{
-			if (_tempContainer == null)
+			if (persistAcrossScenes)
 			{
-				_tempContainer = new GameObject(TEMP_CONTAINER_NAME).AddComponent<PoolContainer>();
+				if (releaseOnSceneTransition)
+				{
+					while (_liveObjs.Count > 0)
+					{
+						_liveObjs.First.Value.Release();
+					}
+				}
 			}
-
-			_tempContainer.RegisterOnDestroy(SceneTransitioning);
+			else
+			{
+				Clear();
+			}
 		}
 
 		private void SendCreationMessage(PoolableGameObject newObj)
@@ -432,21 +426,6 @@ namespace UnityPooler
 
 				// Release removes us from the list
 				node = _liveObjs.First;
-			}
-		}
-
-		private void SceneTransitioning()
-		{
-			if (persistAcrossScenes)
-			{
-				if (releaseOnSceneTransition)
-				{
-					ReleaseObjects();
-				}
-			}
-			else
-			{
-				Clear();
 			}
 		}
 

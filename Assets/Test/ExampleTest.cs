@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 using UnityPooler;
 
 namespace UnityPoolerTest
@@ -34,7 +35,7 @@ namespace UnityPoolerTest
 
 			if (Input.GetKeyDown(KeyCode.L))
 			{
-				Application.LoadLevel(Application.loadedLevel);
+				SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
 			}
 		}
 
