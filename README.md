@@ -21,15 +21,9 @@ To use Unity Pooler for prefabs the PoolableGameObject component must be on the 
 
 **Release Objects on Scene Transition** - If an object persists across scenes then should it be released back to the pool when the scene changes?
 
-**Send Creation Message** - Should a creation message be sent to a GameObject when it is created. Calls the function 'OnCreate' on every Monobehaviour on the created GameObject and its children. This isn't a cheap operation so populating the pool is advised.
-
 **Use Cap?** - Should the pool be capped at a certain count? If capped and the cap is hit then GameObjects will be recycled and reused to allow getting a new one.
 
 **Cap Amount** - The cap count size.
-
-**Reuse Message Type** - When a GameObject is reused due to hitting the cap. What kind, if any, message should be sent. Possible options are none, EnableDisable (reused GameObject will receive OnDisable message followed by OnEnable), or a the message OnPooledObjReused (which will be invoked on every active MonoBehaviour on the GameObject and its children).
-
-**Desired Population** - This is informational only. The pool does not use this value but allows the desired number to be associated with the object. Call gameObject.PopulateToDesired() to populate the pool to this value.
 
 ### Populating ###
 
@@ -54,12 +48,19 @@ void Start()
 }
 ```
 
-If the creation messages are enabled then the following function will be invoked on the created GameObject and its children. This works similarly to how the Awake and Start functions work. THIS IS NOT CHEAP! Which is why populating at the beginning is important.
+Components that impelment the IGameObjectPoolable interface will have their member 'OnObjectCreated' invoked.
 
 ```csharp
-void OnCreate()
+public class MyComponent : MonoBehaviour, IGameObjectPoolable
 {
-  Debug.Log("I was just created!");
+  public void OnObjectCreated()
+  {
+  		Debug.Log("I was just created!");
+	}
+	
+	public void OnObjectReused()
+	{
+	}
 }
 ```
 
@@ -82,30 +83,19 @@ void GetObjectFromPool()
 
 ### Reuse ###
 
-If caps are enabled and the cap is hit then Unity Pooler will take an active object and 'reuse' it. This basically means that it will return the previously active GameObject as the new GameObject. They reused GameObject is alerted depending on the setting **Reuse Message Type**.
+If caps are enabled and the cap is hit then Unity Pooler will take an active object and 'reuse' it. This basically means that it will return the previously active GameObject as the new GameObject. Components that implement IGameObjectPoolable will have their member 'OnOjectReused' invoked.
 
 ```csharp
-/// <summary>
-/// The messaging types.
-/// </summary>
-enum ReuseMessageType
+public class MyComponent : MonoBehaviour, IGameObjectPoolable
 {
-	/// <summary>
-	/// No messaging used, just return the resued object.
-	/// </summary>
-	None,
-
-	/// <summary>
-	/// Enable and disable the object to trigger the OnEnable and
-	/// OnDisable functions.
-	/// </summary>
-	EnableDisable,
-
-	/// <summary>
-	/// Send message to invokes function OnReuse on the
-	/// object and all active children.
-	/// </summary>
-	SendMessage
+  public void OnObjectCreated()
+  {
+  }
+	
+  public void OnObjectReused()
+  {
+    Debug.Log("I was just reused!");
+  }
 }
 ```
 
@@ -289,4 +279,16 @@ void ClearObjectPool()
 {
   ObjectPool<MyClass>.Clear(); // Now all the stored objects will be released to be garbage collected.
 }
+```
+
+### Working with [Unity Game Loader](https://github.com/GalvanicGames/unity-game-loader) ###
+
+The Unity Game Loader works by taking enumerators and progressing them as it needs to across frames. To make this work well with the object pooler two new population functions have been added.
+
+```csharp
+static IEnumerator PopulatePoolCo(this GameObject obj, int amount)
+```
+
+```csharp
+static IEnumerator PopulatePoolCo(int numToPopulate)
 ```
