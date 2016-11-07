@@ -15,7 +15,7 @@ namespace UnityPoolerTest
 			Debug.Log("obj released!");
 		}
 
-		public virtual void OnObjecteCreated()
+		public virtual void OnObjectCreated()
 		{
 			Debug.Log("obj parent created!");
 		}

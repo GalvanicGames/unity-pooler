@@ -15,7 +15,7 @@ namespace UnityPoolerTest
 			Debug.Log(gameObject.name + " OnDisable");
 		}
 
-		public void OnObjecteCreated()
+		public void OnObjectCreated()
 		{
 			Debug.Log(gameObject.name + " OnPooledObjCreated");
 		}

@@ -8,7 +8,7 @@
 		/// <summary>
 		/// This function is invoked when the GameObject is created.
 		/// </summary>
-		void OnObjecteCreated();
+		void OnObjectCreated();
 
 		/// <summary>
 		/// This function is invoked when the GameObject is reused.

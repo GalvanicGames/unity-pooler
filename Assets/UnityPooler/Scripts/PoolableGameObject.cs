@@ -379,7 +379,7 @@ namespace UnityPooler
 
 			for (int i = 0; i < _poolables.Length; i++)
 			{
-				_poolables[i].OnObjecteCreated();
+				_poolables[i].OnObjectCreated();
 			}
 		}
 
