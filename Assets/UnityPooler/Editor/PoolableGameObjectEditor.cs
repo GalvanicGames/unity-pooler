@@ -6,7 +6,7 @@ namespace UnityPoolerEditor
 {
 	[CustomEditor(typeof(PoolableGameObject))]
 	[CanEditMultipleObjects]
-	public class PlatformerMotor2DEditor : Editor
+	public class PoolableGameObjectEditor : Editor
 	{
 		private SerializedProperty _useCapProp;
 		private SerializedProperty _capAmountProp;
