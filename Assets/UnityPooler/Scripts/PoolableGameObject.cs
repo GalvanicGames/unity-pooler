@@ -41,7 +41,7 @@ namespace UnityPooler
 		/// Returns an object from the pool
 		/// </summary>
 		/// <returns>The object returned.</returns>
-		public PoolableGameObject Get()
+		public PoolableGameObject Get(bool gameObjectActiveState = true)
 		{
 			Initialize();
 
@@ -65,7 +65,7 @@ namespace UnityPooler
 			while (obj == null || obj.gameObject == null);
 
 			obj._isActive = true;
-			obj.gameObject.SetActive(true);
+			obj.gameObject.SetActive(gameObjectActiveState);
 			_numOfActiveObjs++;
 
 			if (useCap || persistAcrossScenes)
