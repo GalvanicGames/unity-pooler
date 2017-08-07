@@ -20,7 +20,7 @@ namespace UnityPooler
 		/// <param name="objToCreateFrom">The prefab or GameObject that we
 		/// want a duplicated object of.</param>
 		/// <returns>A GameObject from the object pool.</returns>
-		public static GameObject GetObj(GameObject objToCreateFrom)
+		public static GameObject GetObj(GameObject objToCreateFrom, bool gameObjectActiveState = true)
 		{
 			PoolableGameObject poolable = objToCreateFrom.GetComponent<PoolableGameObject>();
 
@@ -30,7 +30,7 @@ namespace UnityPooler
 				return null;
 			}
 
-			return poolable.Get().gameObject;
+			return poolable.Get(gameObjectActiveState).gameObject;
 		}
 
 		/// <summary>
@@ -112,9 +112,9 @@ namespace UnityPooler
 		/// </summary>
 		/// <param name="obj"></param>
 		/// <returns></returns>
-		public static GameObject Get(this GameObject obj)
+		public static GameObject Get(this GameObject obj, bool gameObjectActiveState = true)
 		{
-			return GetObj(obj);
+			return GetObj(obj, gameObjectActiveState);
 		}
 
 		/// <summary>
