@@ -121,7 +121,7 @@ namespace UnityPooler
 			transform.SetParent(container, false);
 			gameObject.SetActive(false);
 			_originalObject._pooledObjs.Push(this);
-			_numOfActiveObjs--;
+			_originalObject._numOfActiveObjs--;
 		}
 
 		/// <summary>
