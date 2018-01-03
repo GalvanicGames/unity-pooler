@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
@@ -121,7 +121,7 @@ namespace UnityPooler
 			transform.SetParent(container, false);
 			gameObject.SetActive(false);
 			_originalObject._pooledObjs.Push(this);
-			_numOfActiveObjs--;
+			_originalObject._numOfActiveObjs--;
 		}
 
 		/// <summary>
@@ -234,8 +234,8 @@ namespace UnityPooler
 		[System.NonSerialized]
 		private bool _initialized;
 
-		[System.NonSerialized]
-		private IGameObjectPoolable[] _poolables;
+		//[System.NonSerialized]
+		//private IGameObjectPoolable[] _poolables;
 
 		/// <summary>
 		/// The function that will be called for reuse on MonoBehaviours. Change this if it conflicts.
@@ -369,7 +369,7 @@ namespace UnityPooler
 				onObjectCreation(newObj.gameObject);
 			}
 
-			_poolables = GetComponentsInChildren<IGameObjectPoolable>(true);
+			var _poolables = newObj.GetComponentsInChildren<IGameObjectPoolable>(true);
 
 			for (int i = 0; i < _poolables.Length; i++)
 			{
@@ -396,6 +396,8 @@ namespace UnityPooler
 				objToUse = objNode.Value;
 			}
 			while (objToUse == null || objToUse.gameObject == null || !objToUse._isActive);
+
+			var _poolables = objToUse.GetComponentsInChildren<IGameObjectPoolable>(true);
 
 			for (int i = 0; i < _poolables.Length; i++)
 			{
